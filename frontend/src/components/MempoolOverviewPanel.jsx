@@ -11,11 +11,17 @@ function Metric({ label, value, helper }) {
   return (
     <motion.div
       variants={listItemReveal}
-      className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+      className="rounded-[22px] border border-white/8 bg-white/[0.03] px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
     >
-      <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">{label}</p>
-      <p className="mt-3 font-display text-[1.65rem] tracking-[-0.04em] text-slate-50">{value}</p>
-      <p className="mt-2 text-sm text-slate-400">{helper}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">{label}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">{helper}</p>
+        </div>
+        <p className="shrink-0 text-right font-display text-[1.55rem] tracking-[-0.04em] text-slate-50">
+          {value}
+        </p>
+      </div>
     </motion.div>
   );
 }
@@ -79,7 +85,12 @@ function MempoolOverviewPanel({ mempool, loading, error }) {
           </div>
         ) : (
           <>
-            <motion.div initial="hidden" animate="visible" variants={softStagger} className="mt-5 grid gap-3 sm:grid-cols-3">
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={softStagger}
+              className="mt-5 space-y-2.5"
+            >
               <Metric
                 label="Transactions"
                 value={formatNumber(mempool?.count)}
@@ -98,7 +109,12 @@ function MempoolOverviewPanel({ mempool, loading, error }) {
             </motion.div>
 
             {histogram.length > 0 ? (
-              <motion.div initial="hidden" animate="visible" variants={softStagger} className="mt-5 rounded-[22px] border border-white/8 bg-white/[0.03] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={softStagger}
+                className="mt-5 rounded-[22px] border border-white/8 bg-white/[0.03] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Fee Histogram</p>
                   <Badge variant="subtle">Priority bands</Badge>

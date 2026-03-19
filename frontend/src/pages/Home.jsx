@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AlertTriangle, DatabaseZap, Radio, Sparkles } from 'lucide-react';
 import AddressSearch from '../components/AddressSearch';
 import AddressMetadataPanel from '../components/AddressMetadataPanel';
@@ -74,12 +74,9 @@ function DashboardSkeleton() {
 }
 
 function Home() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { address: routedAddressParam } = useParams();
-  const routedAddress = normalizeSearchInput(
-    routedAddressParam ?? searchParams.get('address') ?? '',
-  );
+  const routedAddress = normalizeSearchInput(routedAddressParam ?? '');
   const [localSearchMessage, setLocalSearchMessage] = useState(null);
 
   const {
@@ -112,12 +109,13 @@ function Home() {
   useDocumentTitle(routedAddress ? 'WalletLens · Address' : 'WalletLens');
 
   useEffect(() => {
-    if (!searchParams.get('address') || routedAddressParam || !routedAddress) {
+    if (routedAddress || !wallet?.address) {
       return;
     }
 
-    navigate(getAddressRoute(routedAddress), { replace: true });
-  }, [navigate, routedAddress, routedAddressParam, searchParams]);
+    console.log('[WalletLens] Navigating to restored address:', wallet.address);
+    navigate(getAddressRoute(wallet.address), { replace: true });
+  }, [navigate, routedAddress, wallet?.address]);
 
   useEffect(() => {
     if (!routedAddress || routedAddress === requestedAddress) {
@@ -139,16 +137,19 @@ function Home() {
       setQuery(target.value);
 
       if (target.value === routedAddress && target.value === requestedAddress) {
+        console.log('[WalletLens] Refreshing address route:', target.value);
         searchAddress(target.value, { immediate: true });
         return;
       }
 
+      console.log('[WalletLens] Navigating to address:', target.value);
       navigate(getAddressRoute(target.value));
       return;
     }
 
     if (target.type === 'txid') {
       setLocalSearchMessage(null);
+      console.log('[WalletLens] Navigating to tx:', target.value);
       navigate(getTransactionRoute(target.value));
       return;
     }
@@ -161,10 +162,12 @@ function Home() {
     setQuery(demoAddress);
 
     if (demoAddress === routedAddress && demoAddress === requestedAddress) {
+      console.log('[WalletLens] Refreshing demo address:', demoAddress);
       searchAddress(demoAddress, { immediate: true });
       return;
     }
 
+    console.log('[WalletLens] Navigating to demo address:', demoAddress);
     navigate(getAddressRoute(demoAddress));
   };
 

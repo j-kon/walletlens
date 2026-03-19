@@ -71,6 +71,7 @@ function LatestBlocksPanel({ blocks, loading, error }) {
                       <Badge variant="accent">{formatNumber(block.txCount)} txs</Badge>
                       <Link
                         to={getBlockRoute(block.id)}
+                        onClick={() => console.log('[WalletLens] Navigating to block:', block.id)}
                         className="inline-flex h-8 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-sky/25"
                       >
                         Open block

@@ -91,7 +91,10 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
             <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
               <Link
                 to={getTransactionRoute(transaction.txid)}
-                onClick={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  console.log('[WalletLens] Navigating to tx:', transaction.txid);
+                }}
                 className="inline-flex h-9 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white"
               >
                 Tx page
