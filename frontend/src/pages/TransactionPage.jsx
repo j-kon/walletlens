@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Blocks, Clock3, ExternalLink, Scale } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Blocks,
+  Clock3,
+  ExternalLink,
+  Scale,
+} from 'lucide-react';
 import AddressSearch from '../components/AddressSearch';
 import Navbar from '../components/Navbar';
 import Badge from '../components/UI/Badge';
@@ -9,6 +16,7 @@ import Card from '../components/UI/Card';
 import CopyButton from '../components/UI/CopyButton';
 import EmptyState from '../components/UI/EmptyState';
 import { Loader, Skeleton } from '../components/UI/Loader';
+import { useFeeEstimates } from '../hooks/useFeeEstimates';
 import { useTxDetails } from '../hooks/useTxDetails';
 import { DEMO_TESTNET_ADDRESS } from '../services/demoAddress';
 import { formatBTC, formatFeeRate, formatSats } from '../utils/formatBTC';
@@ -17,6 +25,7 @@ import {
   getAddressExplorerUrl,
   getTransactionExplorerUrl,
 } from '../utils/explorerLinks';
+import { getFeeInsight } from '../utils/feeInsights';
 import { fadeUp, getReveal, hoverLift, listItemReveal, softStagger } from '../utils/motion';
 import { shortenTxid } from '../utils/shortenTxid';
 import { detectSearchTarget, normalizeSearchInput } from '../utils/searchTarget';
@@ -89,7 +98,7 @@ function AddressField({ address }) {
   );
 }
 
-function EndpointRow({ item, index, kind }) {
+function EndpointRow({ item, index, kind, showWitness }) {
   const isInput = kind === 'vin';
   const previousTxid = isInput ? item?.txid : null;
   const address =
@@ -113,9 +122,7 @@ function EndpointRow({ item, index, kind }) {
 
           {previousTxid ? (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <p className="font-mono text-xs text-slate-200">
-                {shortenTxid(previousTxid)}
-              </p>
+              <p className="font-mono text-xs text-slate-200">{shortenTxid(previousTxid)}</p>
               <CopyButton value={previousTxid} label="Copy previous transaction id" compact />
               <Link
                 to={`/tx/${previousTxid}`}
@@ -130,6 +137,34 @@ function EndpointRow({ item, index, kind }) {
             <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">Address</p>
             <AddressField address={address} />
           </div>
+
+          {isInput && item?.scriptsig_asm ? (
+            <div className="mt-4 rounded-2xl border border-white/8 bg-black/10 p-3">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">ScriptSig ASM</p>
+              <p className="mt-2 break-all font-mono text-[11px] leading-6 text-slate-200">
+                {item.scriptsig_asm}
+              </p>
+            </div>
+          ) : null}
+
+          {showWitness && isInput && Array.isArray(item?.witness) && item.witness.length > 0 ? (
+            <div className="mt-4 rounded-2xl border border-white/8 bg-black/10 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">Witness Stack</p>
+                <Badge variant="subtle">{item.witness.length} items</Badge>
+              </div>
+              <div className="mt-3 space-y-2">
+                {item.witness.map((witnessItem, witnessIndex) => (
+                  <div
+                    key={`${previousTxid ?? address}-${witnessIndex}`}
+                    className="break-all rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2 font-mono text-[11px] leading-6 text-slate-200"
+                  >
+                    {witnessItem}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="lg:w-56 lg:text-right">
@@ -145,7 +180,7 @@ function EndpointRow({ item, index, kind }) {
   );
 }
 
-function EndpointSection({ title, items, kind }) {
+function EndpointSection({ title, items, kind, showWitness }) {
   return (
     <motion.div initial="hidden" animate="visible" variants={fadeUp}>
       <Card className="h-full p-6 lg:p-7">
@@ -174,6 +209,7 @@ function EndpointSection({ title, items, kind }) {
                 item={item}
                 index={index}
                 kind={kind}
+                showWitness={showWitness}
               />
             ))}
           </motion.div>
@@ -223,19 +259,50 @@ function TransactionPage() {
   const normalizedTxid = normalizeSearchInput(routeTxid ?? '');
   const [query, setQuery] = useState(normalizedTxid);
   const [searchMessage, setSearchMessage] = useState(null);
+  const [showRawHex, setShowRawHex] = useState(false);
+  const [showWitness, setShowWitness] = useState(false);
   const {
     selectedTransaction,
     transactionDetails,
     detailsLoading,
     detailsError,
+    transactionHex,
+    hexLoading,
+    hexError,
     loadTransactionById,
+    loadTransactionHexById,
   } = useTxDetails();
+  const { feeBands, feeEstimatesLoading } = useFeeEstimates();
+
+  const activeTransaction = transactionDetails ?? selectedTransaction;
+  const feeInsight = getFeeInsight(transactionDetails?.feeRate, feeBands);
+  const feeInsightHelper =
+    feeEstimatesLoading || !feeBands
+      ? 'Comparing against live fee estimates...'
+      : feeInsight.helper;
+  const pageError = detailsError ? getTransactionErrorCopy(detailsError) : null;
 
   useEffect(() => {
     setQuery(normalizedTxid);
     setSearchMessage(null);
+    setShowRawHex(false);
+    setShowWitness(false);
     loadTransactionById(normalizedTxid);
   }, [loadTransactionById, normalizedTxid]);
+
+  useEffect(() => {
+    if (!showRawHex || !activeTransaction?.txid || transactionHex || hexLoading) {
+      return;
+    }
+
+    loadTransactionHexById(activeTransaction.txid);
+  }, [
+    activeTransaction?.txid,
+    hexLoading,
+    loadTransactionHexById,
+    showRawHex,
+    transactionHex,
+  ]);
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -266,9 +333,6 @@ function TransactionPage() {
     setQuery('');
     setSearchMessage(null);
   };
-
-  const activeTransaction = transactionDetails ?? selectedTransaction;
-  const pageError = detailsError ? getTransactionErrorCopy(detailsError) : null;
 
   return (
     <div className="min-h-screen text-slate-50">
@@ -303,12 +367,7 @@ function TransactionPage() {
               Review fee data, block placement, virtual size, and the complete vin/vout surface from a dedicated explorer page.
             </p>
 
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={softStagger}
-              className="mt-8 space-y-4"
-            >
+            <motion.div initial="hidden" animate="visible" variants={softStagger} className="mt-8 space-y-4">
               <motion.div variants={listItemReveal}>
                 <Card className="p-5">
                   <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Requested txid</p>
@@ -332,10 +391,13 @@ function TransactionPage() {
                     ) : null}
                   </div>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <Badge variant={transactionDetails?.status?.confirmed ? 'success' : 'warning'}>
-                      {transactionDetails?.status?.confirmed ? 'Confirmed' : 'Pending'}
+                    <Badge variant={activeTransaction?.status?.confirmed ? 'success' : 'warning'}>
+                      {activeTransaction?.status?.confirmed ? 'Confirmed' : 'Pending'}
                     </Badge>
                     <Badge variant="accent">Dedicated transaction route</Badge>
+                    {activeTransaction?.feeRate != null ? (
+                      <Badge variant={feeInsight.variant}>{feeInsight.label}</Badge>
+                    ) : null}
                   </div>
                 </Card>
               </motion.div>
@@ -392,7 +454,7 @@ function TransactionPage() {
                       On-chain execution profile
                     </h2>
                     <p className="mt-3 text-sm leading-7 text-slate-400">
-                      Explore cost, block placement, and transaction footprint with the full input and output graph below.
+                      Explore cost, block placement, transaction footprint, and raw execution data from a single route.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -402,6 +464,7 @@ function TransactionPage() {
                     {transactionDetails.confirmations ? (
                       <Badge variant="subtle">{transactionDetails.confirmations} confirmations</Badge>
                     ) : null}
+                    <Badge variant={feeInsight.variant}>{feeInsight.label}</Badge>
                   </div>
                 </div>
 
@@ -418,9 +481,19 @@ function TransactionPage() {
                     icon={Scale}
                   />
                   <MetricCard
+                    label="Fee Posture"
+                    value={feeInsight.label}
+                    helper={feeInsightHelper}
+                    icon={Scale}
+                  />
+                  <MetricCard
                     label="Confirmations"
                     value={String(transactionDetails.confirmations ?? 0)}
-                    helper={transactionDetails.status?.confirmed ? 'Confirmed in chain history' : 'Awaiting first block inclusion'}
+                    helper={
+                      transactionDetails.status?.confirmed
+                        ? 'Confirmed in chain history'
+                        : 'Awaiting first block inclusion'
+                    }
                     icon={Blocks}
                   />
                   <MetricCard
@@ -431,29 +504,96 @@ function TransactionPage() {
                   />
                   <MetricCard
                     label="Timestamp"
-                    value={transactionDetails.status?.block_time ? formatTimestampWithRelative(transactionDetails.status.block_time) : 'Pending in mempool'}
-                    helper={transactionDetails.status?.block_time ? formatDateTime(transactionDetails.status.block_time) : 'No block timestamp yet'}
+                    value={
+                      transactionDetails.status?.block_time
+                        ? formatTimestampWithRelative(transactionDetails.status.block_time)
+                        : 'Pending in mempool'
+                    }
+                    helper={
+                      transactionDetails.status?.block_time
+                        ? formatDateTime(transactionDetails.status.block_time)
+                        : 'No block timestamp yet'
+                    }
                     icon={Clock3}
                   />
                   <MetricCard
                     label="Virtual Size"
                     value={`${transactionDetails.vsize ?? 'n/a'} vB`}
-                    helper={`${transactionDetails.size ?? 'n/a'} bytes`}
-                    icon={Scale}
-                  />
-                  <MetricCard
-                    label="Weight"
-                    value={`${transactionDetails.weight ?? 'n/a'} wu`}
-                    helper="Raw block weight contribution"
+                    helper={`${transactionDetails.size ?? 'n/a'} bytes • ${transactionDetails.weight ?? 'n/a'} weight units`}
                     icon={Scale}
                   />
                 </motion.div>
+
+                <motion.div variants={listItemReveal} className="mt-6 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowWitness((current) => !current)}
+                    className={`rounded-[20px] border px-4 py-3 text-sm font-medium transition ${
+                      showWitness
+                        ? 'border-brand-sky/25 bg-brand-sky/10 text-brand-sky'
+                        : 'border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    {showWitness ? 'Hide witness data' : 'Show witness data'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowRawHex((current) => !current)}
+                    className={`rounded-[20px] border px-4 py-3 text-sm font-medium transition ${
+                      showRawHex
+                        ? 'border-brand-amber/25 bg-brand-amber/10 text-brand-amber'
+                        : 'border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    {showRawHex ? 'Hide raw hex' : 'Show raw hex'}
+                  </button>
+                </motion.div>
+
+                {showRawHex ? (
+                  <motion.div variants={listItemReveal} className="mt-6 rounded-[24px] border border-white/8 bg-white/[0.03] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Raw Transaction Hex</p>
+                        <p className="mt-2 text-sm text-slate-400">
+                          Fetched on demand from the Esplora hex endpoint.
+                        </p>
+                      </div>
+                      {transactionHex ? (
+                        <CopyButton value={transactionHex} label="Copy raw transaction hex" />
+                      ) : null}
+                    </div>
+
+                    {hexLoading ? (
+                      <div className="mt-4 rounded-2xl border border-white/8 bg-black/10 px-4 py-4 text-sm text-slate-300">
+                        Loading raw transaction hex...
+                      </div>
+                    ) : hexError ? (
+                      <div className="mt-4 rounded-2xl border border-amber-400/15 bg-amber-400/10 px-4 py-4 text-sm text-amber-100">
+                        {hexError}
+                      </div>
+                    ) : transactionHex ? (
+                      <pre className="mt-4 max-h-[420px] overflow-auto rounded-2xl border border-white/8 bg-black/20 p-4 font-mono text-[11px] leading-6 text-slate-200">
+                        {transactionHex}
+                      </pre>
+                    ) : null}
+                  </motion.div>
+                ) : null}
               </Card>
             </motion.div>
 
             <div className="grid gap-6 xl:grid-cols-2">
-              <EndpointSection title="Inputs" items={transactionDetails.vin ?? []} kind="vin" />
-              <EndpointSection title="Outputs" items={transactionDetails.vout ?? []} kind="vout" />
+              <EndpointSection
+                title="Inputs"
+                items={transactionDetails.vin ?? []}
+                kind="vin"
+                showWitness={showWitness}
+              />
+              <EndpointSection
+                title="Outputs"
+                items={transactionDetails.vout ?? []}
+                kind="vout"
+                showWitness={showWitness}
+              />
             </div>
           </motion.section>
         ) : null}

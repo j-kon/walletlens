@@ -3,6 +3,7 @@ import { ArrowDownRight, ArrowUpRight, Clock3, ExternalLink } from 'lucide-react
 import { Link } from 'react-router-dom';
 import { formatTimestampWithRelative } from '../utils/formatDate';
 import { formatBTC, formatFeeRate, formatSats } from '../utils/formatBTC';
+import { getFeeInsight } from '../utils/feeInsights';
 import { getTransactionExplorerUrl } from '../utils/explorerLinks';
 import { shortenTxid } from '../utils/shortenTxid';
 import Badge from './UI/Badge';
@@ -27,10 +28,12 @@ const directionStyles = {
   },
 };
 
-function TransactionCard({ transaction, onSelect, selected }) {
+function TransactionCard({ transaction, feeBands, onSelect, selected }) {
   const direction = directionStyles[transaction.direction] ?? directionStyles.neutral;
   const DirectionIcon = direction.icon;
   const directionPrefix = transaction.direction === 'incoming' ? '+' : transaction.direction === 'outgoing' ? '-' : '';
+  const feeInsight = getFeeInsight(transaction.feeRate, feeBands);
+  const hasFeeInsight = transaction.feeRate != null && Boolean(feeBands);
 
   return (
     <motion.button
@@ -113,6 +116,9 @@ function TransactionCard({ transaction, onSelect, selected }) {
             {transaction.confirmations ? (
               <Badge variant="subtle">{transaction.confirmations} conf</Badge>
             ) : null}
+            {hasFeeInsight ? (
+              <Badge variant={feeInsight.variant}>{feeInsight.label}</Badge>
+            ) : null}
           </div>
         </div>
 
@@ -135,6 +141,7 @@ function TransactionCard({ transaction, onSelect, selected }) {
         <div>
           <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Fee Rate</p>
           <p className="mt-1 text-slate-200">{formatFeeRate(transaction.feeRate)}</p>
+          {hasFeeInsight ? <p className="mt-1 text-xs text-slate-500">{feeInsight.helper}</p> : null}
         </div>
         <div>
           <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Flow</p>

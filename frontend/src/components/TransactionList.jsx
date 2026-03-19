@@ -11,6 +11,7 @@ import { fadeUp, listItemReveal, softStagger } from '../utils/motion';
 function TransactionList({
   transactions,
   pendingTransactions = [],
+  feeBands,
   onSelectTransaction,
   selectedTransactionId,
   loading,
@@ -60,6 +61,7 @@ function TransactionList({
               <motion.div key={transaction.txid} variants={listItemReveal}>
                 <TransactionCard
                   transaction={transaction}
+                  feeBands={feeBands}
                   onSelect={onSelectTransaction}
                   selected={selectedTransactionId === transaction.txid}
                 />
@@ -109,6 +111,7 @@ function TransactionList({
             <motion.div key={transaction.txid} variants={listItemReveal}>
               <TransactionCard
                 transaction={transaction}
+                feeBands={feeBands}
                 onSelect={onSelectTransaction}
                 selected={selectedTransactionId === transaction.txid}
               />

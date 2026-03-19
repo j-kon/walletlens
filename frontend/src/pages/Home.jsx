@@ -4,6 +4,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, DatabaseZap, ExternalLink, Radio, Sparkles } from 'lucide-react';
 import AddressSearch from '../components/AddressSearch';
 import AddressMetadataPanel from '../components/AddressMetadataPanel';
+import FeeEstimatesPanel from '../components/FeeEstimatesPanel';
+import LatestBlocksPanel from '../components/LatestBlocksPanel';
+import MempoolOverviewPanel from '../components/MempoolOverviewPanel';
 import Navbar from '../components/Navbar';
 import SummaryCards from '../components/SummaryCards';
 import TransactionDetailsModal from '../components/TransactionDetailsModal';
@@ -15,6 +18,9 @@ import CopyButton from '../components/UI/CopyButton';
 import EmptyState from '../components/UI/EmptyState';
 import { Skeleton } from '../components/UI/Loader';
 import { useAddressData } from '../hooks/useAddressData';
+import { useBlocks } from '../hooks/useBlocks';
+import { useFeeEstimates } from '../hooks/useFeeEstimates';
+import { useMempoolData } from '../hooks/useMempoolData';
 import { useTxDetails } from '../hooks/useTxDetails';
 import { getAddressExplorerUrl } from '../utils/explorerLinks';
 import { fadeUp, getReveal, hoverLift, listItemReveal, softStagger } from '../utils/motion';
@@ -96,6 +102,9 @@ function Home() {
     openTransaction,
     closeTransaction,
   } = useTxDetails(wallet?.address);
+  const { feeBands, feeEstimatesLoading, feeEstimatesError } = useFeeEstimates();
+  const { mempool, mempoolLoading, mempoolError } = useMempoolData();
+  const { blocks, blocksLoading, blocksError } = useBlocks(6);
 
   useEffect(() => {
     if (!routedAddress || routedAddress === requestedAddress) {
@@ -329,6 +338,47 @@ function Home() {
         ) : null}
 
         <section className="mt-8">
+          <motion.div initial="hidden" animate="visible" variants={softStagger} className="space-y-4">
+            <motion.div variants={getReveal({ y: 16, duration: 0.42 })}>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Network Intelligence</p>
+                  <h2 className="mt-2 font-display text-[2.3rem] tracking-[-0.05em] text-slate-50">
+                    Testnet network telemetry
+                  </h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
+                    Keep the wallet view grounded in current network conditions with live fee guidance, mempool pressure, and the latest blocks.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="subtle">Live fee bands</Badge>
+                  <Badge variant="subtle">Mempool snapshot</Badge>
+                  <Badge variant="subtle">Recent blocks</Badge>
+                </div>
+              </div>
+            </motion.div>
+
+            <div className="grid gap-6 xl:grid-cols-3">
+              <FeeEstimatesPanel
+                feeBands={feeBands}
+                loading={feeEstimatesLoading}
+                error={feeEstimatesError}
+              />
+              <MempoolOverviewPanel
+                mempool={mempool}
+                loading={mempoolLoading}
+                error={mempoolError}
+              />
+              <LatestBlocksPanel
+                blocks={blocks}
+                loading={blocksLoading}
+                error={blocksError}
+              />
+            </div>
+          </motion.div>
+        </section>
+
+        <section className="mt-8">
           {loading && !wallet ? (
             <DashboardSkeleton />
           ) : wallet ? (
@@ -338,6 +388,7 @@ function Home() {
                 <TransactionList
                   transactions={wallet.transactions}
                   pendingTransactions={wallet.pendingTransactions}
+                  feeBands={feeBands}
                   loading={loading}
                   loadingMoreTransactions={loadingMoreTransactions}
                   hasMoreTransactions={hasMoreTransactions}

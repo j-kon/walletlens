@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchTransactionDetail, validateTransactionId } from '../services/bitcoinApi';
+import {
+  fetchTransactionDetail,
+  fetchTransactionHex,
+  validateTransactionId,
+} from '../services/bitcoinApi';
 
 const transactionDetailCache = new Map();
+const transactionHexCache = new Map();
 
 function getCacheKey(txid, address) {
   return `${address ?? 'global'}:${txid}`;
@@ -12,15 +17,23 @@ export function useTxDetails(address) {
   const [transactionDetails, setTransactionDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [transactionHex, setTransactionHex] = useState('');
+  const [hexLoading, setHexLoading] = useState(false);
+  const [hexError, setHexError] = useState('');
 
   const abortRef = useRef(null);
+  const hexAbortRef = useRef(null);
 
   const closeTransaction = useCallback(() => {
     abortRef.current?.abort();
+    hexAbortRef.current?.abort();
     setSelectedTransaction(null);
     setTransactionDetails(null);
     setLoading(false);
     setError('');
+    setTransactionHex('');
+    setHexLoading(false);
+    setHexError('');
   }, []);
 
   const loadTransactionById = useCallback(
@@ -31,6 +44,9 @@ export function useTxDetails(address) {
       setSelectedTransaction(previewTransaction ?? (resolvedTxid ? { txid: resolvedTxid } : null));
       setTransactionDetails(previewTransaction);
       setError('');
+      setTransactionHex('');
+      setHexError('');
+      setHexLoading(false);
 
       if (!resolvedTxid || !validateTransactionId(resolvedTxid)) {
         setLoading(false);
@@ -88,6 +104,50 @@ export function useTxDetails(address) {
     [address],
   );
 
+  const loadTransactionHexById = useCallback(async (txid) => {
+    const resolvedTxid = txid?.trim().toLowerCase() ?? '';
+    setHexError('');
+
+    if (!resolvedTxid || !validateTransactionId(resolvedTxid)) {
+      setHexLoading(false);
+      setHexError('Raw hex unavailable');
+      return;
+    }
+
+    const cachedHex = transactionHexCache.get(resolvedTxid);
+
+    if (cachedHex) {
+      setTransactionHex(cachedHex);
+      return;
+    }
+
+    hexAbortRef.current?.abort();
+    const controller = new AbortController();
+    hexAbortRef.current = controller;
+    setHexLoading(true);
+
+    try {
+      const hex = await fetchTransactionHex(resolvedTxid, controller.signal);
+
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      transactionHexCache.set(resolvedTxid, hex);
+      setTransactionHex(hex);
+    } catch (requestError) {
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      setHexError(requestError?.kind === 'network' ? 'Unable to fetch raw hex' : 'Raw hex unavailable');
+    } finally {
+      if (!controller.signal.aborted) {
+        setHexLoading(false);
+      }
+    }
+  }, []);
+
   const openTransaction = useCallback(
     async (transaction) => {
       await loadTransactionById(transaction?.txid, { previewTransaction: transaction });
@@ -102,6 +162,7 @@ export function useTxDetails(address) {
   useEffect(
     () => () => {
       abortRef.current?.abort();
+      hexAbortRef.current?.abort();
     },
     [],
   );
@@ -114,6 +175,10 @@ export function useTxDetails(address) {
     detailsError: error,
     openTransaction,
     loadTransactionById,
+    transactionHex,
+    hexLoading,
+    hexError,
+    loadTransactionHexById,
     closeTransaction,
   };
 }

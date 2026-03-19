@@ -75,6 +75,26 @@ export function validateTransactionId(txid) {
   return TXID_REGEX.test(txid.trim().toLowerCase());
 }
 
+function normalizeMempoolOverview(mempool) {
+  return {
+    count: mempool?.count ?? 0,
+    vsize: mempool?.vsize ?? 0,
+    totalFee: mempool?.total_fee ?? 0,
+    feeHistogram: mempool?.fee_histogram ?? [],
+  };
+}
+
+function normalizeBlocks(blocks, limit = 6) {
+  return (blocks ?? []).slice(0, limit).map((block) => ({
+    id: block.id,
+    height: block.height,
+    timestamp: block.timestamp,
+    txCount: block.tx_count ?? 0,
+    size: block.size ?? 0,
+    weight: block.weight ?? 0,
+  }));
+}
+
 function mergeTransactionsById(...collections) {
   const seenTransactionIds = new Set();
 
@@ -283,6 +303,24 @@ export async function fetchTransactionDetail(txid, signal, address) {
   ]);
 
   return normalizeTransaction(transaction, address, tipHeightText ? Number(tipHeightText) : null);
+}
+
+export async function fetchTransactionHex(txid, signal) {
+  return request(`/tx/${txid}/hex`, { signal, responseType: 'text' });
+}
+
+export async function fetchFeeEstimates(signal) {
+  return request('/fee-estimates', { signal });
+}
+
+export async function fetchMempoolOverview(signal) {
+  const mempool = await request('/mempool', { signal });
+  return normalizeMempoolOverview(mempool);
+}
+
+export async function fetchLatestBlocks(signal, limit = 6) {
+  const blocks = await request('/blocks', { signal });
+  return normalizeBlocks(blocks, limit);
 }
 
 export async function fetchAddressTransactionsPage(address, lastSeenTxid, signal) {

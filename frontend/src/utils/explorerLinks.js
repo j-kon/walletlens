@@ -7,3 +7,7 @@ export function getAddressExplorerUrl(address) {
 export function getTransactionExplorerUrl(txid) {
   return `${EXPLORER_BASE_URL}/tx/${txid}`;
 }
+
+export function getBlockExplorerUrl(blockHash) {
+  return `${EXPLORER_BASE_URL}/block/${blockHash}`;
+}
