@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Activity } from 'lucide-react';
+import { formatBTC } from '../utils/formatBTC';
 import TransactionCard from './TransactionCard';
 import EmptyState from './UI/EmptyState';
 import Badge from './UI/Badge';
@@ -11,7 +12,16 @@ function TransactionList({
   onSelectTransaction,
   selectedTransactionId,
   loading,
+  loadingMoreTransactions,
+  hasMoreTransactions,
+  onLoadMoreTransactions,
+  netFlow,
 }) {
+  const netFlowTone =
+    netFlow > 0 ? 'text-emerald-300' : netFlow < 0 ? 'text-rose-300' : 'text-slate-200';
+  const netFlowLabel =
+    netFlow > 0 ? 'incoming' : netFlow < 0 ? 'outgoing' : 'balanced';
+
   return (
     <Card className="p-6 lg:p-7">
       <div className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -27,6 +37,24 @@ function TransactionList({
           <Badge variant="accent">{transactions.length} entries</Badge>
         </div>
       </div>
+
+      {transactions.length > 0 ? (
+        <div className="mt-5 rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Net Flow</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <p className={`font-display text-2xl ${netFlowTone}`}>
+              {netFlow > 0 ? '+' : netFlow < 0 ? '-' : ''}
+              {formatBTC(Math.abs(netFlow))}
+            </p>
+            <Badge variant={netFlow > 0 ? 'success' : netFlow < 0 ? 'danger' : 'subtle'}>
+              {netFlowLabel}
+            </Badge>
+          </div>
+          <p className="mt-2 text-sm text-slate-400">
+            Net address flow across the transactions currently loaded into the explorer.
+          </p>
+        </div>
+      ) : null}
 
       {loading && transactions.length === 0 ? (
         <Loader className="pt-6" label="Loading transactions..." />
@@ -73,6 +101,26 @@ function TransactionList({
           ))}
         </motion.div>
       )}
+
+      {transactions.length > 0 ? (
+        <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-400">
+            {hasMoreTransactions
+              ? 'Load the next Esplora chain page to continue browsing older activity.'
+              : 'All available chain transactions loaded for this address.'}
+          </p>
+
+          <button
+            type="button"
+            onClick={onLoadMoreTransactions}
+            disabled={!hasMoreTransactions || loadingMoreTransactions}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm font-medium text-slate-100 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loadingMoreTransactions ? <InlineSpinner /> : null}
+            {loadingMoreTransactions ? 'Loading more...' : hasMoreTransactions ? 'Load more' : 'No more transactions'}
+          </button>
+        </div>
+      ) : null}
     </Card>
   );
 }

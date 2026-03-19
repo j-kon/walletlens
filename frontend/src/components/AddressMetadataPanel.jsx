@@ -1,0 +1,107 @@
+import { ExternalLink, Layers3, RadioTower, ShieldCheck } from 'lucide-react';
+import { formatBTC, formatSats } from '../utils/formatBTC';
+import { formatDateTime, formatRelativeTime } from '../utils/formatDate';
+import { getAddressExplorerUrl } from '../utils/explorerLinks';
+import Badge from './UI/Badge';
+import Card from './UI/Card';
+
+function MetadataRow({ label, value, helper }) {
+  return (
+    <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+      <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">{label}</p>
+      <p className="mt-2 text-base font-medium text-slate-100">{value}</p>
+      {helper ? <p className="mt-1 text-sm text-slate-400">{helper}</p> : null}
+    </div>
+  );
+}
+
+function AddressMetadataPanel({ address, metadata }) {
+  return (
+    <Card className="p-6 lg:p-7">
+      <div className="flex flex-col gap-4 border-b border-white/6 pb-5 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Address Metadata</p>
+          <h2 className="mt-2 font-display text-2xl text-slate-50">Wallet context</h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Quick address-level metadata and explorer shortcuts for developer workflows.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="testnet">Testnet</Badge>
+          <a
+            href={getAddressExplorerUrl(address)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
+          >
+            <ExternalLink className="h-4 w-4 text-brand-sky" />
+            View address
+          </a>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <MetadataRow
+          label="Address Type"
+          value={metadata.addressType}
+          helper="Detected from address prefix"
+        />
+        <MetadataRow
+          label="Network"
+          value={metadata.network}
+          helper="Blockstream Esplora testnet"
+        />
+        <MetadataRow
+          label="Total UTXOs"
+          value={String(metadata.utxoCount)}
+          helper="Spendable outputs tracked"
+        />
+        <MetadataRow
+          label="Largest UTXO"
+          value={formatBTC(metadata.largestUtxo)}
+          helper={formatSats(metadata.largestUtxo)}
+        />
+        <MetadataRow
+          label="Last Activity"
+          value={
+            metadata.lastActivityTimestamp
+              ? formatRelativeTime(metadata.lastActivityTimestamp)
+              : 'No confirmed activity'
+          }
+          helper={
+            metadata.lastActivityTimestamp
+              ? formatDateTime(metadata.lastActivityTimestamp)
+              : 'No block timestamp available yet'
+          }
+        />
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4 text-sm text-slate-300">
+          <div className="flex items-center gap-2 text-slate-100">
+            <ShieldCheck className="h-4 w-4 text-brand-amber" />
+            Address verified
+          </div>
+          <p className="mt-2 text-slate-400">Validated as a Bech32 testnet address before requests are sent.</p>
+        </div>
+        <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4 text-sm text-slate-300">
+          <div className="flex items-center gap-2 text-slate-100">
+            <Layers3 className="h-4 w-4 text-brand-sky" />
+            UTXO-aware
+          </div>
+          <p className="mt-2 text-slate-400">Largest output and total UTXO count are derived from the current spendable set.</p>
+        </div>
+        <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4 text-sm text-slate-300">
+          <div className="flex items-center gap-2 text-slate-100">
+            <RadioTower className="h-4 w-4 text-emerald-300" />
+            Explorer linked
+          </div>
+          <p className="mt-2 text-slate-400">Deep-link out to Blockstream Explorer for independent transaction and address verification.</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+export default AddressMetadataPanel;

@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Blocks, Clock3, Scale, X } from 'lucide-react';
-import { formatDateTime } from '../utils/formatDate';
+import { Blocks, Clock3, ExternalLink, Scale, X } from 'lucide-react';
+import { formatTimestampWithRelative } from '../utils/formatDate';
 import { formatBTC, formatFeeRate, formatSats } from '../utils/formatBTC';
+import { getTransactionExplorerUrl } from '../utils/explorerLinks';
 import Badge from './UI/Badge';
 import CopyButton from './UI/CopyButton';
 import { Loader } from './UI/Loader';
@@ -107,7 +108,19 @@ function TransactionDetailsModal({
                     {activeTransaction?.txid}
                   </p>
                   {activeTransaction?.txid ? (
-                    <CopyButton value={activeTransaction.txid} label="Copy full transaction id" compact />
+                    <>
+                      <a
+                        href={getTransactionExplorerUrl(activeTransaction.txid)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
+                        aria-label="View transaction on Blockstream Explorer"
+                        title="View transaction on Blockstream Explorer"
+                      >
+                        <ExternalLink className="h-4 w-4 text-brand-sky" />
+                      </a>
+                      <CopyButton value={activeTransaction.txid} label="Copy full transaction id" compact />
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -142,7 +155,7 @@ function TransactionDetailsModal({
                     <p className="mt-3 font-display text-2xl text-slate-50">
                       {activeTransaction.confirmations ?? 'n/a'}
                     </p>
-                    <p className="mt-2 text-sm text-slate-400">{formatDateTime(activeTransaction.status?.block_time)}</p>
+                    <p className="mt-2 text-sm text-slate-400">{formatTimestampWithRelative(activeTransaction.status?.block_time)}</p>
                   </div>
                   <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-slate-500">

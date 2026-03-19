@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { ArrowDownRight, ArrowUpRight, Clock3 } from 'lucide-react';
-import { formatDate } from '../utils/formatDate';
+import { ArrowDownRight, ArrowUpRight, Clock3, ExternalLink } from 'lucide-react';
+import { formatTimestampWithRelative } from '../utils/formatDate';
 import { formatBTC, formatFeeRate, formatSats } from '../utils/formatBTC';
+import { getTransactionExplorerUrl } from '../utils/explorerLinks';
 import { shortenTxid } from '../utils/shortenTxid';
 import Badge from './UI/Badge';
 import CopyButton from './UI/CopyButton';
@@ -62,13 +63,26 @@ function TransactionCard({ transaction, onSelect, selected }) {
               </div>
             </div>
 
-            <CopyButton
-              value={transaction.txid}
-              label="Copy transaction id"
-              compact
-              onClick={(event) => event.stopPropagation()}
-              className="shrink-0"
-            />
+            <div className="flex items-center gap-2">
+              <a
+                href={getTransactionExplorerUrl(transaction.txid)}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(event) => event.stopPropagation()}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
+                aria-label="View transaction on Blockstream Explorer"
+                title="View transaction on Blockstream Explorer"
+              >
+                <ExternalLink className="h-4 w-4 text-brand-sky" />
+              </a>
+              <CopyButton
+                value={transaction.txid}
+                label="Copy transaction id"
+                compact
+                onClick={(event) => event.stopPropagation()}
+                className="shrink-0"
+              />
+            </div>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -86,7 +100,9 @@ function TransactionCard({ transaction, onSelect, selected }) {
             {directionPrefix}
             {formatBTC(transaction.displayAmount)}
           </p>
-          <p className="mt-2 text-sm text-slate-400">{formatDate(transaction.status?.block_time)}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            {formatTimestampWithRelative(transaction.status?.block_time)}
+          </p>
         </div>
       </div>
 

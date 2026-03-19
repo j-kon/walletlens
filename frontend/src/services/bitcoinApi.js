@@ -104,6 +104,41 @@ function getDisplayAmount({ direction, netValue, receivedValue }) {
   return Math.abs(netValue);
 }
 
+function getLargestUtxo(utxos) {
+  return utxos[0]?.value ?? 0;
+}
+
+function getLastActivityTimestamp(transactions) {
+  return (
+    transactions.find((transaction) => transaction.status?.block_time)?.status?.block_time ??
+    null
+  );
+}
+
+function getNetFlow(transactions) {
+  return transactions.reduce((sum, transaction) => sum + (transaction.netValue ?? 0), 0);
+}
+
+function getPaginationState(transactions) {
+  const confirmedTransactions = transactions.filter((transaction) => transaction.status?.confirmed);
+  const lastSeenTxid = confirmedTransactions.at(-1)?.txid ?? null;
+
+  return {
+    lastSeenTxid,
+    hasMoreTransactions: confirmedTransactions.length === 25,
+  };
+}
+
+function getAddressMetadata(address, transactions, utxos) {
+  return {
+    addressType: address.startsWith('tb1') ? 'SegWit (Bech32)' : 'Unknown',
+    network: 'Testnet',
+    utxoCount: utxos.length,
+    largestUtxo: getLargestUtxo(utxos),
+    lastActivityTimestamp: getLastActivityTimestamp(transactions),
+  };
+}
+
 export function normalizeTransaction(tx, address, tipHeight) {
   const sentValue = getValueFlowForAddress(
     tx.vin ?? [],
@@ -150,6 +185,12 @@ function normalizeUtxo(utxo, tipHeight) {
 function normalizeWalletSnapshot(address, addressInfo, transactions, utxos, tipHeight) {
   const chainStats = addressInfo?.chain_stats ?? {};
   const mempoolStats = addressInfo?.mempool_stats ?? {};
+  const normalizedTransactions = (transactions ?? []).map((tx) =>
+    normalizeTransaction(tx, address, tipHeight),
+  );
+  const normalizedUtxos = (utxos ?? [])
+    .map((utxo) => normalizeUtxo(utxo, tipHeight))
+    .sort((left, right) => right.value - left.value);
   const confirmedBalance =
     (chainStats.funded_txo_sum ?? 0) -
     (chainStats.spent_txo_sum ?? 0);
@@ -174,10 +215,11 @@ function normalizeWalletSnapshot(address, addressInfo, transactions, utxos, tipH
       confirmedTransactions: chainStats.tx_count ?? 0,
       pendingTransactions: mempoolStats.tx_count ?? 0,
     },
-    transactions: (transactions ?? []).map((tx) =>
-      normalizeTransaction(tx, address, tipHeight),
-    ),
-    utxos: (utxos ?? []).map((utxo) => normalizeUtxo(utxo, tipHeight)),
+    transactions: normalizedTransactions,
+    netFlow: getNetFlow(normalizedTransactions),
+    metadata: getAddressMetadata(address, normalizedTransactions, normalizedUtxos),
+    pagination: getPaginationState(normalizedTransactions),
+    utxos: normalizedUtxos,
   };
 }
 
@@ -201,4 +243,32 @@ export async function fetchTransactionDetail(txid, signal, address) {
   ]);
 
   return normalizeTransaction(transaction, address, tipHeightText ? Number(tipHeightText) : null);
+}
+
+export async function fetchAddressTransactionsPage(address, lastSeenTxid, signal) {
+  const [transactions, tipHeightText] = await Promise.all([
+    request(`/address/${address}/txs/chain/${lastSeenTxid}`, { signal }),
+    request('/blocks/tip/height', { signal, responseType: 'text' }).catch(() => null),
+  ]);
+
+  const tipHeight = tipHeightText ? Number(tipHeightText) : null;
+  const normalizedTransactions = (transactions ?? []).map((transaction) =>
+    normalizeTransaction(transaction, address, tipHeight),
+  );
+
+  return {
+    transactions: normalizedTransactions,
+    pagination: getPaginationState(normalizedTransactions),
+  };
+}
+
+export function deriveWalletInsights(address, transactions, utxos) {
+  const sortedUtxos = [...utxos].sort((left, right) => right.value - left.value);
+
+  return {
+    metadata: getAddressMetadata(address, transactions, sortedUtxos),
+    netFlow: getNetFlow(transactions),
+    pagination: getPaginationState(transactions),
+    utxos: sortedUtxos,
+  };
 }

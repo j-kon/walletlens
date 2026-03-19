@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, DatabaseZap, Radio, Sparkles } from 'lucide-react';
+import { AlertTriangle, DatabaseZap, ExternalLink, Radio, Sparkles } from 'lucide-react';
 import AddressSearch from '../components/AddressSearch';
+import AddressMetadataPanel from '../components/AddressMetadataPanel';
 import Navbar from '../components/Navbar';
 import SummaryCards from '../components/SummaryCards';
 import TransactionDetailsModal from '../components/TransactionDetailsModal';
@@ -14,6 +14,7 @@ import EmptyState from '../components/UI/EmptyState';
 import { Skeleton } from '../components/UI/Loader';
 import { useAddressData } from '../hooks/useAddressData';
 import { useTxDetails } from '../hooks/useTxDetails';
+import { getAddressExplorerUrl } from '../utils/explorerLinks';
 
 function DashboardSkeleton() {
   return (
@@ -55,12 +56,18 @@ function DashboardSkeleton() {
 
 function Home() {
   const {
+    query,
+    setQuery,
     wallet,
     requestedAddress,
     loading,
+    loadingMoreTransactions,
     hasSearched,
     message,
+    hasMoreTransactions,
     searchAddress,
+    loadMoreTransactions,
+    clearSearch,
     demoAddress,
   } = useAddressData();
   const {
@@ -73,8 +80,6 @@ function Home() {
     closeTransaction,
   } = useTxDetails(wallet?.address);
 
-  const [query, setQuery] = useState('');
-
   const handleSearch = (event) => {
     event.preventDefault();
     searchAddress(query);
@@ -82,7 +87,7 @@ function Home() {
 
   const handleUseDemo = () => {
     setQuery(demoAddress);
-    searchAddress(demoAddress);
+    searchAddress(demoAddress, { immediate: true });
   };
 
   const messageTone =
@@ -157,6 +162,7 @@ function Home() {
             onChange={setQuery}
             onSubmit={handleSearch}
             onUseDemo={handleUseDemo}
+            onClear={clearSearch}
             isLoading={loading}
             validationError={message?.tone === 'error' ? message.title : ''}
           />
@@ -189,12 +195,27 @@ function Home() {
                 <Badge variant="testnet">{wallet.network}</Badge>
                 <Badge variant="success">Live data</Badge>
                 {requestedAddress === demoAddress ? <Badge variant="accent">Demo address</Badge> : null}
+                <a
+                  href={getAddressExplorerUrl(wallet.address)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
+                >
+                  <ExternalLink className="h-4 w-4 text-brand-sky" />
+                  Blockstream
+                </a>
                 <Badge variant="subtle">
                   Updated {new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(new Date(wallet.lastUpdatedAt))}
                 </Badge>
               </div>
             </div>
           </Card>
+        ) : null}
+
+        {wallet ? (
+          <div className="mt-6">
+            <AddressMetadataPanel address={wallet.address} metadata={wallet.metadata} />
+          </div>
         ) : null}
 
         {message?.tone === 'error' && !wallet ? (
@@ -226,6 +247,10 @@ function Home() {
                 <TransactionList
                   transactions={wallet.transactions}
                   loading={loading}
+                  loadingMoreTransactions={loadingMoreTransactions}
+                  hasMoreTransactions={hasMoreTransactions}
+                  onLoadMoreTransactions={loadMoreTransactions}
+                  netFlow={wallet.netFlow}
                   selectedTransactionId={selectedTransactionId}
                   onSelectTransaction={openTransaction}
                 />

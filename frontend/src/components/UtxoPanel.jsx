@@ -7,6 +7,8 @@ import EmptyState from './UI/EmptyState';
 
 function UtxoPanel({ utxos }) {
   const utxoBalance = utxos.reduce((sum, utxo) => sum + (utxo.value ?? 0), 0);
+  const confirmedCount = utxos.filter((utxo) => utxo.status?.confirmed).length;
+  const pendingCount = utxos.length - confirmedCount;
 
   return (
     <Card className="p-6 lg:p-7 xl:sticky xl:top-24">
@@ -18,8 +20,11 @@ function UtxoPanel({ utxos }) {
             UTXOs are unspent outputs that can be used to build new transactions.
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-brand-sky">
-          <Coins className="h-5 w-5" />
+        <div className="flex items-center gap-2">
+          <Badge variant="accent">{utxos.length} outputs</Badge>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-brand-sky">
+            <Coins className="h-5 w-5" />
+          </div>
         </div>
       </div>
 
@@ -33,11 +38,26 @@ function UtxoPanel({ utxos }) {
         </div>
       ) : (
         <>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Confirmation Mix</p>
+              <p className="mt-2 text-sm text-slate-200">{confirmedCount} confirmed • {pendingCount} pending</p>
+            </div>
+            <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Sort Order</p>
+              <p className="mt-2 text-sm text-slate-200">Outputs are sorted by amount, largest first.</p>
+            </div>
+          </div>
+
           <div className="mt-6 space-y-3">
-            {utxos.map((utxo) => (
+            {utxos.map((utxo, index) => (
               <div
                 key={`${utxo.txid}:${utxo.vout}`}
-                className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4"
+                className={`rounded-[22px] border p-4 ${
+                  index === 0
+                    ? 'border-brand-amber/25 bg-brand-amber/8'
+                    : 'border-white/8 bg-white/[0.03]'
+                }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -46,9 +66,12 @@ function UtxoPanel({ utxos }) {
                     </p>
                     <p className="mt-1 text-xs text-slate-500">Output #{utxo.vout}</p>
                   </div>
-                  <Badge variant={utxo.status?.confirmed ? 'success' : 'warning'}>
-                    {utxo.status?.confirmed ? 'Confirmed' : 'Pending'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {index === 0 ? <Badge variant="testnet">Largest</Badge> : null}
+                    <Badge variant={utxo.status?.confirmed ? 'success' : 'warning'}>
+                      {utxo.status?.confirmed ? 'Confirmed' : 'Pending'}
+                    </Badge>
+                  </div>
                 </div>
 
                 <div className="mt-4 flex items-end justify-between gap-3">

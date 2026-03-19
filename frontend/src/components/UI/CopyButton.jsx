@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Check, Copy } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -32,7 +33,10 @@ function CopyButton({
   };
 
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.96 }}
+      animate={copied ? { scale: [1, 1.06, 1], y: [0, -1, 0] } : { scale: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
       type="button"
       onClick={handleCopy}
       className={cn(
@@ -45,7 +49,7 @@ function CopyButton({
     >
       {copied ? <Check className="h-4 w-4 text-emerald-300" /> : <Copy className="h-4 w-4" />}
       {compact ? null : <span>{copied ? 'Copied' : 'Copy'}</span>}
-    </button>
+    </motion.button>
   );
 }
 

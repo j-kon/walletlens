@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, TestTubeDiagonal } from 'lucide-react';
+import { ArrowRight, Search, TestTubeDiagonal, Trash2 } from 'lucide-react';
 import Card from './UI/Card';
 
 function AddressSearch({
@@ -7,6 +7,7 @@ function AddressSearch({
   onChange,
   onSubmit,
   onUseDemo,
+  onClear,
   isLoading,
   validationError,
 }) {
@@ -36,7 +37,7 @@ function AddressSearch({
           </div>
         </label>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <motion.button
             whileTap={{ scale: 0.98 }}
             type="submit"
@@ -55,6 +56,16 @@ function AddressSearch({
           >
             <TestTubeDiagonal className="h-4 w-4 text-brand-sky" />
             Try demo address
+          </button>
+
+          <button
+            type="button"
+            onClick={onClear}
+            disabled={isLoading && !value}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-transparent px-4 text-sm font-medium text-slate-400 transition hover:border-white/15 hover:bg-white/[0.03] hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Trash2 className="h-4 w-4" />
+            Clear
           </button>
         </div>
       </form>
