@@ -34,14 +34,22 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
   const directionPrefix = transaction.direction === 'incoming' ? '+' : transaction.direction === 'outgoing' ? '-' : '';
   const feeInsight = getFeeInsight(transaction.feeRate, feeBands);
   const hasFeeInsight = transaction.feeRate != null && Boolean(feeBands);
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect(transaction);
+    }
+  };
 
   return (
-    <motion.button
+    <motion.div
       whileHover={selected ? { y: -3, scale: 1.003 } : hoverLift}
       whileTap={{ scale: 0.995 }}
-      type="button"
+      role="button"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       onClick={() => onSelect(transaction)}
-      className={`group relative w-full overflow-hidden rounded-[24px] border p-4 text-left transition ${
+      className={`group relative w-full cursor-pointer overflow-hidden rounded-[24px] border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-sky/35 ${
         selected
           ? 'border-brand-sky/45 bg-[linear-gradient(180deg,rgba(142,178,198,0.12),rgba(18,26,38,0.82))] shadow-[0_20px_60px_rgba(9,15,24,0.44),0_0_0_1px_rgba(142,178,198,0.16),0_0_36px_rgba(142,178,198,0.14)]'
           : 'border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.02))] hover:border-white/15 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))]'
@@ -80,7 +88,7 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
               <Link
                 to={getTransactionRoute(transaction.txid)}
                 onClick={(event) => event.stopPropagation()}
@@ -122,7 +130,7 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
           </div>
         </div>
 
-        <div className="text-left lg:text-right">
+        <div className="text-left lg:w-52 lg:text-right">
           <p className={`font-display text-[1.75rem] tracking-[-0.04em] ${direction.tone}`}>
             {directionPrefix}
             {formatBTC(transaction.displayAmount)}
@@ -148,7 +156,7 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
           <p className="mt-1 capitalize text-slate-200">{transaction.direction === 'neutral' ? 'observed' : transaction.direction}</p>
         </div>
       </div>
-    </motion.button>
+    </motion.div>
   );
 }
 

@@ -54,7 +54,7 @@ function CopyButton({
       type="button"
       onClick={handleCopy}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-white/15 hover:bg-white/[0.08] hover:text-white',
+        'inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-white/15 hover:bg-white/[0.08] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-sky/25',
         compact ? 'h-9 w-9' : 'px-3 py-2 text-sm',
         className,
       )}

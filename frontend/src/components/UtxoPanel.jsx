@@ -33,31 +33,31 @@ function UtxoPanel({ utxos }) {
         </div>
 
         {utxos.length === 0 ? (
-          <div className="pt-5">
+          <div className="pt-6">
             <motion.div
               variants={listItemReveal}
-              className="relative overflow-hidden rounded-[28px] border border-dashed border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-5 text-center"
+              className="relative overflow-hidden rounded-[28px] border border-dashed border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] px-5 py-6 text-center"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(142,178,198,0.08),transparent_48%)] opacity-80" />
-              <div className="relative mx-auto flex h-18 w-18 items-center justify-center rounded-[24px] border border-white/10 bg-white/[0.05] shadow-[0_16px_40px_rgba(3,7,18,0.32)]">
-                <Coins className="h-7 w-7 text-slate-100" />
+              <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-[26px] border border-white/10 bg-white/[0.05] shadow-[0_16px_40px_rgba(3,7,18,0.32)]">
+                <Coins className="h-8 w-8 text-slate-100" />
               </div>
-              <h3 className="relative mt-4 font-display text-[1.3rem] tracking-tight text-slate-100">
+              <h3 className="relative mt-5 font-display text-[1.32rem] tracking-tight text-slate-100">
                 No spendable outputs found
               </h3>
-              <p className="relative mt-3 text-sm leading-6 text-slate-400">
+              <p className="relative mx-auto mt-3 max-w-md text-sm leading-6 text-slate-400">
                 This address does not currently expose any spendable UTXOs. New confirmed outputs will appear here as soon as they are available.
               </p>
 
-              <div className="relative mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[22px] border border-white/8 bg-black/10 p-3.5 text-left">
+              <div className="relative mt-6 grid gap-3.5 sm:grid-cols-2">
+                <div className="rounded-[22px] border border-white/8 bg-black/10 p-4 text-left">
                   <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">
                     Visible UTXO Balance
                   </p>
                   <p className="mt-2 font-display text-xl text-slate-50">{formatBTC(0)}</p>
                   <p className="mt-1 text-xs text-slate-400">{formatSats(0)}</p>
                 </div>
-                <div className="rounded-[22px] border border-white/8 bg-black/10 p-3.5 text-left">
+                <div className="rounded-[22px] border border-white/8 bg-black/10 p-4 text-left">
                   <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Status</p>
                   <p className="mt-2 text-sm text-slate-200">Waiting for the first spendable output</p>
                   <p className="mt-1 text-xs text-slate-400">Pending or future outputs will surface here automatically.</p>

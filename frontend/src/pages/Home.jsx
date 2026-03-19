@@ -19,10 +19,11 @@ import EmptyState from '../components/UI/EmptyState';
 import { Skeleton } from '../components/UI/Loader';
 import { useAddressData } from '../hooks/useAddressData';
 import { useBlocks } from '../hooks/useBlocks';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useFeeEstimates } from '../hooks/useFeeEstimates';
 import { useMempoolData } from '../hooks/useMempoolData';
 import { useTxDetails } from '../hooks/useTxDetails';
-import { getAddressRoute } from '../utils/explorerLinks';
+import { getAddressRoute, getHomeRoute, getTransactionRoute } from '../utils/explorerLinks';
 import { fadeUp, getReveal, hoverLift, listItemReveal, softStagger } from '../utils/motion';
 import { detectSearchTarget, normalizeSearchInput } from '../utils/searchTarget';
 
@@ -73,7 +74,7 @@ function DashboardSkeleton() {
 }
 
 function Home() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { address: routedAddressParam } = useParams();
   const routedAddress = normalizeSearchInput(
@@ -108,6 +109,15 @@ function Home() {
   const { feeBands, feeEstimatesLoading, feeEstimatesError } = useFeeEstimates();
   const { mempool, mempoolLoading, mempoolError } = useMempoolData();
   const { blocks, blocksLoading, blocksError } = useBlocks(5);
+  useDocumentTitle(routedAddress ? 'WalletLens · Address' : 'WalletLens');
+
+  useEffect(() => {
+    if (!searchParams.get('address') || routedAddressParam || !routedAddress) {
+      return;
+    }
+
+    navigate(getAddressRoute(routedAddress), { replace: true });
+  }, [navigate, routedAddress, routedAddressParam, searchParams]);
 
   useEffect(() => {
     if (!routedAddress || routedAddress === requestedAddress) {
@@ -139,7 +149,7 @@ function Home() {
 
     if (target.type === 'txid') {
       setLocalSearchMessage(null);
-      navigate(`/tx/${target.value}`);
+      navigate(getTransactionRoute(target.value));
       return;
     }
 
@@ -161,8 +171,7 @@ function Home() {
   const handleClear = () => {
     setLocalSearchMessage(null);
     clearSearch();
-    setSearchParams({});
-    navigate('/');
+    navigate(getHomeRoute());
   };
 
   const displayMessage = localSearchMessage ?? message;
@@ -397,22 +406,26 @@ function Home() {
               </div>
             </motion.div>
 
-            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(320px,0.88fr)]">
-              <FeeEstimatesPanel
-                feeBands={feeBands}
-                loading={feeEstimatesLoading}
-                error={feeEstimatesError}
-              />
-              <MempoolOverviewPanel
-                mempool={mempool}
-                loading={mempoolLoading}
-                error={mempoolError}
-              />
-              <LatestBlocksPanel
-                blocks={blocks}
-                loading={blocksLoading}
-                error={blocksError}
-              />
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.95fr)] xl:items-start">
+              <div className="grid gap-4 md:grid-cols-2 xl:items-start">
+                <FeeEstimatesPanel
+                  feeBands={feeBands}
+                  loading={feeEstimatesLoading}
+                  error={feeEstimatesError}
+                />
+                <MempoolOverviewPanel
+                  mempool={mempool}
+                  loading={mempoolLoading}
+                  error={mempoolError}
+                />
+              </div>
+              <div className="xl:self-start">
+                <LatestBlocksPanel
+                  blocks={blocks}
+                  loading={blocksLoading}
+                  error={blocksError}
+                />
+              </div>
             </div>
           </motion.div>
         </section>

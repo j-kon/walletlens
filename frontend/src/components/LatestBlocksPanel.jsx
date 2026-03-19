@@ -12,7 +12,7 @@ import { fadeUp, hoverLift, listItemReveal, softStagger } from '../utils/motion'
 function LatestBlocksPanel({ blocks, loading, error }) {
   return (
     <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-      <Card className="h-full p-5 lg:p-6">
+      <Card className="p-5 lg:p-6">
         <div className="flex flex-col gap-3 border-b border-white/6 pb-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Latest Blocks</p>
@@ -32,7 +32,7 @@ function LatestBlocksPanel({ blocks, loading, error }) {
         </div>
 
         {loading ? (
-          <div className="mt-5 space-y-2.5">
+          <div className="mt-5 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-1">
             {[...Array(5)].map((_, index) => (
               <div key={index} className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3.5">
                 <Skeleton className="h-4 w-16" />
@@ -46,15 +46,20 @@ function LatestBlocksPanel({ blocks, loading, error }) {
             {error}
           </div>
         ) : (
-          <motion.div initial="hidden" animate="visible" variants={softStagger} className="mt-5 space-y-2.5">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={softStagger}
+            className="mt-5 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-1"
+          >
             {blocks.slice(0, 5).map((block) => (
               <motion.div
                 key={block.id}
                 variants={listItemReveal}
                 whileHover={hoverLift}
-                className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:border-white/12 hover:bg-white/[0.05]"
+                className="h-full rounded-[22px] border border-white/8 bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:border-white/12 hover:bg-white/[0.05]"
               >
-                <div className="flex flex-col gap-2.5">
+                <div className="flex h-full flex-col gap-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <Badge variant="subtle">Height {formatNumber(block.height)}</Badge>
@@ -66,7 +71,7 @@ function LatestBlocksPanel({ blocks, loading, error }) {
                       <Badge variant="accent">{formatNumber(block.txCount)} txs</Badge>
                       <Link
                         to={getBlockRoute(block.id)}
-                        className="text-xs text-brand-sky transition hover:text-slate-100"
+                        className="inline-flex h-8 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-sky/25"
                       >
                         Open block
                       </Link>

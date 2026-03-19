@@ -45,7 +45,7 @@ function MempoolOverviewPanel({ mempool, loading, error }) {
 
   return (
     <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-      <Card className="h-full p-5 lg:p-6">
+      <Card className="p-5 lg:p-6">
         <div className="flex flex-col gap-3 border-b border-white/6 pb-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Mempool Overview</p>

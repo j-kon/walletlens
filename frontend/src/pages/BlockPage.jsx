@@ -17,12 +17,14 @@ import CopyButton from '../components/UI/CopyButton';
 import EmptyState from '../components/UI/EmptyState';
 import { Loader, Skeleton } from '../components/UI/Loader';
 import { useBlockDetails } from '../hooks/useBlockDetails';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { DEMO_TESTNET_ADDRESS } from '../services/demoAddress';
 import { formatFeeRate, formatSats } from '../utils/formatBTC';
 import { formatDateTime, formatTimestampWithRelative } from '../utils/formatDate';
 import {
   getAddressRoute,
   getBlockRoute,
+  getHomeRoute,
   getTransactionRoute,
 } from '../utils/explorerLinks';
 import { formatBytes, formatNumber } from '../utils/formatNumber';
@@ -191,6 +193,7 @@ function BlockPage() {
   const [searchMessage, setSearchMessage] = useState(null);
   const { block, blockLoading, blockError } = useBlockDetails(normalizedBlockId, 10);
   const pageError = blockError ? getBlockErrorCopy(blockError) : null;
+  useDocumentTitle('WalletLens · Block');
 
   useEffect(() => {
     setSearchMessage(null);
@@ -239,7 +242,7 @@ function BlockPage() {
         >
           <motion.div variants={getReveal({ y: 20, duration: 0.56 })} className="py-4">
             <Link
-              to="/"
+              to={getHomeRoute()}
               className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-slate-200"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -312,7 +315,7 @@ function BlockPage() {
               action={
                 <button
                   type="button"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate(getHomeRoute())}
                   className="rounded-[20px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/[0.08]"
                 >
                   Return home
